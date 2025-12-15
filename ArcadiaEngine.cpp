@@ -106,10 +106,29 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
-    // TODO: Implement 0/1 Knapsack using DP
-    // items = {weight, value} pairs
-    // Return maximum value achievable within capacity
-    return 0;
+    int n = static_cast<int>(items.size());
+
+    if (capacity <= 0 || n == 0) return 0;
+
+    vector<vector<int>> V(n + 1, vector<int>(capacity + 1, 0));
+    //vector<vector<int>> P(n + 1, vector<int>(capacity + 1, 0));
+
+    for (int i = 1; i <= n; ++i) {
+        int w = items[i - 1].first;
+        int val = items[i - 1].second;
+
+        for (int j = 1; j <= capacity; ++j) {
+            if (w <= j && val + V[i - 1][j - w] > V[i - 1][j]) {
+                V[i][j] = val + V[i - 1][j - w];
+                //P[i][j] = j - w;
+            } else {
+                V[i][j] = V[i - 1][j];
+               // P[i][j] = j;
+            }
+        }
+    }
+
+    return V[n][capacity];
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
