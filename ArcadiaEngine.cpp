@@ -252,6 +252,18 @@ private:
         return NIL;
     }
 
+    void printTreeHelper(Node* node, int depth) {
+        if (node == NIL) return;
+        printTreeHelper(node->left, depth + 1);
+        for (int i = 0; i < depth; ++i) {
+            cout << "  ";
+        }
+        cout << "[price=" << node->price
+             << ", id=" << node->itemID
+             << ", color=" << (node->color == RED ? "R" : "B") << "]\n";
+        printTreeHelper(node->right, depth + 1);
+    }
+
 public:
     ConcreteAuctionTree() {
         sentinel.color = BLACK;
@@ -262,6 +274,17 @@ public:
         sentinel.price = -1;
         NIL = &sentinel;
         root = NIL;
+    }
+
+    // Debugging utility: prints the tree in-order with indentation.
+    // Not part of the public interface in ArcadiaEngine.h, but can be
+    // used directly if you have a ConcreteAuctionTree instance.
+    void printTree() {
+        if (root == NIL) {
+            cout << "(empty tree)\n";
+            return;
+        }
+        printTreeHelper(root, 0);
     }
 
     void insertItem(int itemID, int price) override {
