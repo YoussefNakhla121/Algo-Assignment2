@@ -364,19 +364,17 @@ public:
 // =========================================================
 
 int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
-    // Use subset-sum DP to find the largest achievable sum S <= total/2
-    // then result = total - 2*S
-    int actualN = static_cast<int>(min(n, static_cast<int>(coins.size())));
+
     long long total = 0;
-    for (int i = 0; i < actualN; ++i) total += coins[i];
+    for (int i = 0; i < n; ++i) total += coins[i];
 
-    if (actualN == 0) return 0;
+    if (n == 0) return 0;
 
-    int half = static_cast<int>(total / 2);
+    int half = (total / 2);
     vector<char> dp(half + 1, 0);
     dp[0] = 1;
     
-    for (int i = 0; i < actualN; ++i) {
+    for (int i = 0; i < n; ++i) {
         int v = coins[i];
         //if (v <= 0) continue
         if (v > half) continue; 
@@ -389,16 +387,16 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
 
     for (int s = half; s >= 0; --s) {
         if (dp[s]) {
-            long long diff = total - 2LL * s;
-            return static_cast<int>(diff);
+            long long diff = total - 2 * s;
+            return diff;
         }
     }
 
-    return static_cast<int>(total);
+    return total;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
-    int n = static_cast<int>(items.size());
+    int n = items.size();
 
     if (capacity <= 0 || n == 0) return 0;
 
@@ -424,11 +422,23 @@ int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& it
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
-    // TODO: Implement string decoding DP
-    // Rules: "uu" can be decoded as "w" or "uu"
-    //        "nn" can be decoded as "m" or "nn"
-    // Count total possible decodings
-    return 0;
+    int n = s.size();
+    if (n == 0) return 0;
+    vector<long long> dp(n + 1, 0); 
+    dp[0] = 1; 
+    
+    for (int i = 1; i <= n; ++i) {
+        dp[i] = (dp[i] + dp[i - 1]);
+
+
+        if (i >= 2) {
+            if (s[i - 1] == s[i - 2] && (s[i - 1] == 'u' || s[i - 1] == 'n')) {
+                dp[i] = (dp[i] + dp[i - 2]); 
+            }
+        }
+    }
+
+    return dp[n] ;
 }
 
 // =========================================================
