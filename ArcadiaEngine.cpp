@@ -259,8 +259,8 @@ private:
             cout << "  ";
         }
         cout << "[price=" << node->price
-             << ", id=" << node->itemID
-             << ", color=" << (node->color == RED ? "R" : "B") << "]\n";
+            << ", id=" << node->itemID
+            << ", color=" << (node->color == RED ? "R" : "B") << "]\n";
         printTreeHelper(node->right, depth + 1);
     }
 
@@ -364,10 +364,37 @@ public:
 // =========================================================
 
 int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
-    // TODO: Implement partition problem using DP
-    // Goal: Minimize |sum(subset1) - sum(subset2)|
-    // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+    // Use subset-sum DP to find the largest achievable sum S <= total/2
+    // then result = total - 2*S
+    int actualN = static_cast<int>(min(n, static_cast<int>(coins.size())));
+    long long total = 0;
+    for (int i = 0; i < actualN; ++i) total += coins[i];
+
+    if (actualN == 0) return 0;
+
+    int half = static_cast<int>(total / 2);
+    vector<char> dp(half + 1, 0);
+    dp[0] = 1;
+    
+    for (int i = 0; i < actualN; ++i) {
+        int v = coins[i];
+        //if (v <= 0) continue
+        if (v > half) continue; 
+
+        for (int s = half; s >= v; --s) {
+            if (dp[s - v]) dp[s] = 1;
+        }
+
+    }
+
+    for (int s = half; s >= 0; --s) {
+        if (dp[s]) {
+            long long diff = total - 2LL * s;
+            return static_cast<int>(diff);
+        }
+    }
+
+    return static_cast<int>(total);
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
