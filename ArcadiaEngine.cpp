@@ -22,52 +22,208 @@ using namespace std;
 
 // --- 1. PlayerTable (Double Hashing) ---
 
+enum type{allowed,notallowed};
+
+struct HashEntry{
+    string element;
+    int playerID;
+    type status;
+};
+
+
 class ConcretePlayerTable : public PlayerTable {
 private:
+    int sz=101;
+    HashEntry Table[101];
+    int currentsize=0;
+    int hashfunction1(int key)
+    {
+        return key%sz;
+    }
+    int hashfunction2(int key)
+    {
+        int prime=97;
+        return prime-(key%prime);
+    }
+
     // TODO: Define your data structures here
     // Hint: You'll need a hash table with double hashing collision resolution
 
 public:
     ConcretePlayerTable() {
+        //Table=new HashEntry*[sz];
+        for(int i=0;i<sz;i++)
+        {
+            Table[i].element=nullptr;
+            Table[i].playerID=0;
+            Table[i].status=allowed;
+        }
         // TODO: Initialize your hash table
     }
 
     void insert(int playerID, string name) override {
+        if(currentsize>=sz)
+        {
+            cout<<"The Table is full."<<endl;
+        }
+        int i=0;
+        int position=(hashfunction1(playerID)+(i*hashfunction2(playerID)))%sz;
+        while(Table[position].status==notallowed)
+        {
+            i++;
+            if(Table[position].playerID==playerID)
+            {
+                cout<<"This player is already existed."<<endl;
+            }
+            position=(hashfunction1(playerID)+(i*hashfunction2(playerID)))%sz;
+
+        }
+        Table[position].element=name;
+        Table[position].playerID=playerID;
+        Table[position].status=notallowed;
+        currentsize++;
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
     }
 
     string search(int playerID) override {
+        if(currentsize==0)
+        {
+            cout<<"The Table is Empty."<<endl;
+        }
+        int i=0;
+        int position=(hashfunction1(playerID)+(i*hashfunction2(playerID)))%sz;
+        while(Table[position].status==allowed&&Table[position].playerID!=playerID)
+        {
+            i++;
+            position=(hashfunction1(playerID)+(i*hashfunction2(playerID)))%sz;
+            if(i>101)
+                break;
+        }
+        if(i>101)
+        {
+            Table[position].status=allowed;
+            return Table[position].element;
+        }
+        else
+            return "";
         // TODO: Implement double hashing search
         // Return "" if player not found
-        return "";
     }
 };
 
 // --- 2. Leaderboard (Skip List) ---
-
+struct Node
+{
+    Node *next;
+    Node *down;
+    int playerID;
+    int score;
+    int level;
+    Node(Node *next,Node *down,int playerID,int score,int level)
+    {
+        this->next=next;
+        this->down=down;
+        this->playerID=playerID;
+        this->score=score;
+        this->level=level;
+    }
+};
 class ConcreteLeaderboard : public Leaderboard {
 private:
+
+    Node *head;
+    int currentsize=0;
+    int getrandomlevel()
+    {
+        int level=0;
+        while(level<=head->level&&(rand()%2==1))
+        {
+            level++;
+        }
+        return level;
+    }
     // TODO: Define your skip list node structure and necessary variables
     // Hint: You'll need nodes with multiple forward pointers
 
 public:
     ConcreteLeaderboard() {
+        head=new Node(NULL,NULL,0,0,0);
         // TODO: Initialize your skip list
     }
 
     void addScore(int playerID, int score) override {
+        int insertlevel=getrandomlevel();
+        if(insertlevel>head->level)
+        {
+            head=new Node(NULL,head,0,0,insertlevel);
+        }
+        Node* cur=head;
+        Node* bottom=NULL;
+        while(cur!=NULL)
+        {
+            Node* next=cur->next;
+            if(next==NULL||next->playerID<playerID)
+            {
+                if(cur->level<=insertlevel)
+                {
+                    Node* player=new Node(next,NULL,playerID,score,cur->level);
+                    currentsize++;
+                    cur->next=player;
+                    if(bottom!=NULL)
+                        bottom->down=player;
+                    bottom=player;
+                }
+                cur=cur->down;
+            }
+            else
+                cur=cur->next;
+        }
         // TODO: Implement skip list insertion
         // Remember to maintain descending order by score
     }
 
     void removePlayer(int playerID) override {
+        Node* cur=head;
+        vector<Node*>currents;
+        while(cur!=NULL)
+        {
+            currents.push_back(cur);
+            cur=cur->down;
+        }
+        for(int i=0;i<currents.size();i++)
+        {
+            Node *current=currents[i];
+            Node *next=current->next;
+            while(next!=NULL&&next->playerID!=playerID)
+            {
+                next=next->next;
+                current=current->next;
+            }
+            Node *deletenode=next;
+            current->next=next->next;
+            delete deletenode;
+        }
         // TODO: Implement skip list deletion
     }
 
     vector<int> getTopN(int n) override {
+        vector<int>topn;
+        Node *cur=head;
+        int skipedplayers=currentsize-n;
+        while(cur->next!=NULL)
+        {
+            if(skipedplayers==0)
+                topn.push_back(cur->playerID);
+            else
+                skipedplayers--;
+        }
+        for(int i=0;i<topn.size()/2;i++)
+        {
+            swap(topn[i],topn[topn.size()-i-1]);
+        }
         // TODO: Return top N player IDs in descending score order
-        return {};
+        return topn;
     }
 };
 
@@ -373,11 +529,11 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     int half = (total / 2);
     vector<char> dp(half + 1, 0);
     dp[0] = 1;
-    
+
     for (int i = 0; i < n; ++i) {
         int v = coins[i];
         //if (v <= 0) continue
-        if (v > half) continue; 
+        if (v > half) continue;
 
         for (int s = half; s >= v; --s) {
             if (dp[s - v]) dp[s] = 1;
@@ -424,16 +580,16 @@ int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& it
 long long InventorySystem::countStringPossibilities(string s) {
     int n = s.size();
     if (n == 0) return 0;
-    vector<long long> dp(n + 1, 0); 
-    dp[0] = 1; 
-    
+    vector<long long> dp(n + 1, 0);
+    dp[0] = 1;
+
     for (int i = 1; i <= n; ++i) {
         dp[i] = (dp[i] + dp[i - 1]);
 
 
         if (i >= 2) {
             if (s[i - 1] == s[i - 2] && (s[i - 1] == 'u' || s[i - 1] == 'n')) {
-                dp[i] = (dp[i] + dp[i - 2]); 
+                dp[i] = (dp[i] + dp[i - 2]);
             }
         }
     }
@@ -485,15 +641,15 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
 // =========================================================
 
 extern "C" {
-    PlayerTable* createPlayerTable() { 
-        return new ConcretePlayerTable(); 
+    PlayerTable* createPlayerTable() {
+        return new ConcretePlayerTable();
     }
 
-    Leaderboard* createLeaderboard() { 
-        return new ConcreteLeaderboard(); 
+    Leaderboard* createLeaderboard() {
+        return new ConcreteLeaderboard();
     }
 
-    AuctionTree* createAuctionTree() { 
-        return new ConcreteAuctionTree(); 
+    AuctionTree* createAuctionTree() {
+        return new ConcreteAuctionTree();
     }
 }
